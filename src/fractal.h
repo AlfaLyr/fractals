@@ -1,8 +1,8 @@
 /************************************************
  * Fractals
- * 
+ *
  * Author: Erica
- * 
+ *
  * License: GNU General Public License Usage
  ************************************************/
 
@@ -14,19 +14,25 @@
 class Fractal
 {
 private:
-    int dx, dy;
+    double dx, dy;
     double zoom;
     QImage* img;
     QLabel* imageArea;
 
 public:
-    const int MAX_ITERATIONS = 1000;
+    const int MAX_ITERATIONS = 100;
 
 public:
     Fractal(QImage* img, QLabel* imageArea);
 
     int mandelbrot(int x, int y);
     void fillImage(int dx, int dy, int zoom);
+    int getDx () {return dx;}
+    int getDy () {return dy;}
+    double getZoom () {return zoom;}
+    void zoomInOut (double);
+    void shiftX (double);
+    void shiftY (double);
 };
 
 #endif //FRACTAL_H

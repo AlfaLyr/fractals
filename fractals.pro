@@ -9,7 +9,7 @@ INCLUDEPATH += .
 QT += core gui
 QT += widgets
 
-QMAKE_CXXFLAGS = -g
+#QMAKE_CXXFLAGS = -g
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
