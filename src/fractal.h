@@ -19,22 +19,23 @@ private:
     double dx, dy;
     double zoom;
     int maxIterations;
+    uint hueStart, hueEnd;
 
 private slots:
     double interpolate (double, double, double, double);
+    double mandelbrot(double, double);
 
 public:
-    Fractal(QImage*, QLabel*, double, double, double, int);
+    Fractal(QImage*, QLabel*, double, double, double, int, int, int);
 
-    double mandelbrot(double, double);
     void fillImage();
-    int getDx () {return dx;}
-    int getDy () {return dy;}
-    double getZoom () {return zoom;}
+    void resetZoom(double, double, double);
+    void mouseZoom(int, int, int, int);
     void newMaxIter(int);
     void zoomInOut (double);
     void shiftX (double);
     void shiftY (double);
+    void setHues (int, int);
 };
 
 #endif //FRACTAL_H

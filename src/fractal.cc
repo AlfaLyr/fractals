@@ -8,10 +8,11 @@
 
 #include <vector>
 #include <cmath>
+#include <iostream>
 #include "fractal.h"
 
-Fractal::Fractal(QImage* img, QLabel* imageArea, double dx, double dy, double zoom, int maxIterations) :
-    img(img), imageArea(imageArea), dx(dx), dy(dy), zoom(zoom), maxIterations(maxIterations) {}
+Fractal::Fractal(QImage* img, QLabel* imageArea, double dx, double dy, double zoom, int maxIterations, int hueStart, int hueEnd) :
+    img(img), imageArea(imageArea), dx(dx), dy(dy), zoom(zoom), maxIterations(maxIterations), hueStart(hueStart), hueEnd(hueEnd) {}
 
 double Fractal::mandelbrot(double cr, double ci)
 {
@@ -28,7 +29,6 @@ double Fractal::mandelbrot(double cr, double ci)
         zr = zrsqr - zisqr + cr;
         zrsqr = pow(zr, 2);
         zisqr = pow(zi, 2);
-        //if (zrsqr + zisqr > 4.) return (double)it + 1. - log(log(sqrt(zrsqr + zisqr))) / log(2.);
         if (zrsqr + zisqr > 25.) return (double)it + 1. - log(log(sqrt(zrsqr + zisqr))) / log(2.);
     }
 
@@ -37,7 +37,7 @@ double Fractal::mandelbrot(double cr, double ci)
 
 void Fractal::fillImage()
 {
-    uint h = 0, s = 255, v = 255;
+    uint h, s = 255, v = 255;
 
     std::vector<int> histogram(maxIterations, 0);
     std::vector<std::vector<double>> vMandelbrot(img->width(), std::vector<double>(img->height(), 0.));
@@ -73,8 +73,8 @@ void Fractal::fillImage()
         {
             double colourFactor = interpolate((double)floor(vMandelbrot[x][y]), totalPix[floor(vMandelbrot[x][y])], totalPix[ceil(vMandelbrot[x][y])], vMandelbrot[x][y]);
 
-            h = 255 * (1.-pow(colourFactor,3)) + 20;
-            v = 255 * pow(colourFactor,3);
+            h = hueStart * (pow(colourFactor, 4)) + hueEnd * (1.-pow(colourFactor, 4));
+            v = 255 * pow(colourFactor, 4);
             QColor pixel = QColor::fromHsv(h, s, v);
 
             img->setPixel(x, y, qRgb(pixel.red(), pixel.green(), pixel.blue()));
@@ -88,6 +88,34 @@ double Fractal::interpolate (double x1, double y1, double y2, double x)
 {
     return y1 + (y2 - y1) * (x - x1);
 }
+
+void Fractal::resetZoom(double newDx, double newDy, double newZoom)
+{
+    dx = newDx;
+    dy = newDy;
+    zoom = newZoom;
+
+    fillImage();
+}
+
+
+void Fractal::mouseZoom(int x1, int y1, int x2, int y2)
+{
+    double difx = abs(x2 - x1) / double(img->width());
+    double dify = abs(y2 - y1) / double(img->height());
+
+    double distx = abs(x1 + x2) / 2. - img->width() / 2.;
+    double disty = abs(y1 + y2) / 2. - img->height() / 2.;
+
+    std::cout << dx << ' ' << distx/zoom << std::endl;
+
+    dx -= distx * img->width() / zoom;
+    dy -= disty * img->height() / zoom;
+    zoom /= std::min(difx, dify);
+
+    fillImage();
+}
+
 
 void Fractal::newMaxIter(int newMaxIterations)
 {
@@ -103,12 +131,20 @@ void Fractal::zoomInOut(double factor)
 
 void Fractal::shiftX(double distance)
 {
-    dx += distance;
+    dx += distance / zoom;
     fillImage();
 }
 
 void Fractal::shiftY(double distance)
 {
-    dy += distance;
+    dy += distance / zoom;
     fillImage();
 }
+
+void Fractal::setHues(int newHueStart, int newHueEnd)
+{
+    hueStart = newHueStart;
+    hueEnd = newHueEnd;
+    fillImage();
+}
+
