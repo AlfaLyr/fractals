@@ -14,22 +14,24 @@
 class Fractal
 {
 private:
-    double dx, dy;
-    double zoom;
     QImage* img;
     QLabel* imageArea;
+    double dx, dy;
+    double zoom;
+    int maxIterations;
+
+private slots:
+    double interpolate (double, double, double, double);
 
 public:
-    const int MAX_ITERATIONS = 100;
+    Fractal(QImage*, QLabel*, double, double, double, int);
 
-public:
-    Fractal(QImage* img, QLabel* imageArea);
-
-    int mandelbrot(int x, int y);
-    void fillImage(int dx, int dy, int zoom);
+    double mandelbrot(double, double);
+    void fillImage();
     int getDx () {return dx;}
     int getDy () {return dy;}
     double getZoom () {return zoom;}
+    void newMaxIter(int);
     void zoomInOut (double);
     void shiftX (double);
     void shiftY (double);

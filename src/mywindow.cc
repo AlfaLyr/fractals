@@ -11,7 +11,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileDialog>
-#include <complex>
+#include <QSpinBox>
 #include <map>
 #include <string>
 #include "mywindow.h"
@@ -35,9 +35,13 @@ MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
 
     QPushButton* saveButton = new QPushButton("Save image");
 
+    QSpinBox* maxIterBox = new QSpinBox;
+    maxIterBox->setRange(1, 10000);
+    maxIterBox->setValue(300);
+
     img = new QImage(WIDTH, HEIGHT, QImage::Format_RGB888);
-    Fractal* fractal = new Fractal(img, imageArea);
-    fractal->fillImage(0.7*WIDTH, 0, 0.4*WIDTH);
+    Fractal* fractal = new Fractal(img, imageArea, 0.7*WIDTH, 0., 0.4*WIDTH, maxIterBox->value());
+    fractal->fillImage();
 
     QVBoxLayout* vBox = new QVBoxLayout(this);
     QHBoxLayout* hBox = new QHBoxLayout();
@@ -54,15 +58,17 @@ MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
     hBox->addWidget(navButtons["zoomOut"], 1, Qt::AlignRight);
     vBox->addWidget(imageArea, 1 , Qt::AlignCenter);
     vBox->addLayout(hBox);
+    vBox->addWidget(maxIterBox, 1, Qt::AlignRight);
     vBox->addWidget(saveButton, 1, Qt::AlignRight);
     
     connect(saveButton, &QPushButton::clicked, this, &MyWindow::saveImage);
-    connect(navButtons["zoomIn"], &QPushButton::clicked, [=](){fractal->zoomInOut(1.1);});
+    connect(navButtons["zoomIn"], &QPushButton::clicked, [=](){fractal->zoomInOut(1.105465);});
     connect(navButtons["zoomOut"], &QPushButton::clicked, [=](){fractal->zoomInOut(0.9);});
-    connect(navButtons["dxp"], &QPushButton::clicked, [=](){fractal->shiftX(20.*double(WIDTH)/fractal->getZoom());});
-    connect(navButtons["dxm"], &QPushButton::clicked, [=](){fractal->shiftX(-20.*double(WIDTH)/fractal->getZoom());});
-    connect(navButtons["dyp"], &QPushButton::clicked, [=](){fractal->shiftY(-20.*double(HEIGHT)/fractal->getZoom());});
-    connect(navButtons["dym"], &QPushButton::clicked, [=](){fractal->shiftY(20.*double(HEIGHT)/fractal->getZoom());});
+    connect(navButtons["dxp"], &QPushButton::clicked, [=](){fractal->shiftX(-20.*double(WIDTH)/fractal->getZoom());});
+    connect(navButtons["dxm"], &QPushButton::clicked, [=](){fractal->shiftX(20.*double(WIDTH)/fractal->getZoom());});
+    connect(navButtons["dyp"], &QPushButton::clicked, [=](){fractal->shiftY(20.*double(HEIGHT)/fractal->getZoom());});
+    connect(navButtons["dym"], &QPushButton::clicked, [=](){fractal->shiftY(-20.*double(HEIGHT)/fractal->getZoom());});
+    connect(maxIterBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){fractal->newMaxIter(i);});
 }
 
 void MyWindow::saveImage()

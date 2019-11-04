@@ -6,73 +6,109 @@
  * License: GNU General Public License Usage
  ************************************************/
 
-#include <complex>
+#include <vector>
 #include <cmath>
 #include "fractal.h"
 
-Fractal::Fractal(QImage* img, QLabel* imageArea) : img(img), imageArea(imageArea) {}
+Fractal::Fractal(QImage* img, QLabel* imageArea, double dx, double dy, double zoom, int maxIterations) :
+    img(img), imageArea(imageArea), dx(dx), dy(dy), zoom(zoom), maxIterations(maxIterations) {}
 
-int Fractal::mandelbrot(int x, int y)
+double Fractal::mandelbrot(double cr, double ci)
 {
-    std::complex<double> z = 0;
-    std::complex<double> c(double(x) / zoom - dx / img->width(), double(y) / zoom - dy / img->height());
+    double zr = 0.;
+    double zi = 0.;
+    double zrsqr = 0.;
+    double zisqr = 0.;
 
-    for(int it = 0; it < MAX_ITERATIONS; it++)
+    for (int it = 0; it < maxIterations; it++)
     {
-        if (std::abs(z) > 2.) return it;
-        z = z * z + c;
+        zi = zr * zi;
+        zi += zi;
+        zi += ci;
+        zr = zrsqr - zisqr + cr;
+        zrsqr = pow(zr, 2);
+        zisqr = pow(zi, 2);
+        //if (zrsqr + zisqr > 4.) return (double)it + 1. - log(log(sqrt(zrsqr + zisqr))) / log(2.);
+        if (zrsqr + zisqr > 25.) return (double)it + 1. - log(log(sqrt(zrsqr + zisqr))) / log(2.);
     }
-    return 0;
+
+    return -1.;
 }
 
-void Fractal::fillImage(int dx, int dy, int zoom)
+void Fractal::fillImage()
 {
-    this->dx = dx;
-    this->dy = dy;
-    this->zoom = zoom;
+    uint h = 0, s = 255, v = 255;
 
-    uint r, g, b;
-    
-    uint r0 = 255, g0 = 255, b0 = 0;
-    uint r1 = 255, g1 = 0, b1 = 255;
-    uint rmix, gmix, bmix;
+    std::vector<int> histogram(maxIterations, 0);
+    std::vector<std::vector<double>> vMandelbrot(img->width(), std::vector<double>(img->height(), 0.));
+    std::vector<double> totalPix;
+    int sumIter = 0;
 
     for (int x = 0; x < img->width(); x++)
     {
         for (int y = 0; y < img->height(); y++)
         {
-            int iterations = mandelbrot(x-img->width()/2, y-img->height()/2);
-            double colourfactor = (double)iterations / MAX_ITERATIONS;
-
-            rmix = ((double)iterations / MAX_ITERATIONS) * (double)r0 + (1. - (double)iterations / MAX_ITERATIONS) * (double)r1;
-            gmix = ((double)iterations / MAX_ITERATIONS) * (double)g0 + (1. - (double)iterations / MAX_ITERATIONS) * (double)g1;
-            bmix = ((double)iterations / MAX_ITERATIONS) * (double)b0 + (1. - (double)iterations / MAX_ITERATIONS) * (double)b1;
+            double scaledX = ((double)x - (double)img->width()/2.)/zoom - dx/(double)img->width();
+            double scaledY = ((double)y - (double)img->height()/2.)/zoom - dy/(double)img->width();
             
-            r = colourfactor * rmix;
-            g = colourfactor * gmix;
-            b = colourfactor * bmix;
+            double it = mandelbrot(scaledX, scaledY);
+            vMandelbrot[x][y] = it;
+            (it >= 0.) ? histogram[(int)it]++ : it = 0.;
+        }
+    }
 
-            img->setPixel(x, y, qRgb(r, g, b));
+    for (int i=0; i < maxIterations; i++) sumIter += histogram[i];
+
+    double tP = 0.;
+
+    for (int i=0; i < maxIterations; i++)
+    {
+        tP += (double)histogram[i] / sumIter;
+        totalPix.push_back(tP);
+    }
+
+    for (int x = 0; x < img->width(); x++)
+    {
+        for (int y = 0; y < img->height(); y++)
+        {
+            double colourFactor = interpolate((double)floor(vMandelbrot[x][y]), totalPix[floor(vMandelbrot[x][y])], totalPix[ceil(vMandelbrot[x][y])], vMandelbrot[x][y]);
+
+            h = 255 * (1.-pow(colourFactor,3)) + 20;
+            v = 255 * pow(colourFactor,3);
+            QColor pixel = QColor::fromHsv(h, s, v);
+
+            img->setPixel(x, y, qRgb(pixel.red(), pixel.green(), pixel.blue()));
         }
     }
 
     imageArea->setPixmap(QPixmap::fromImage(*img));
 }
 
+double Fractal::interpolate (double x1, double y1, double y2, double x)
+{
+    return y1 + (y2 - y1) * (x - x1);
+}
+
+void Fractal::newMaxIter(int newMaxIterations)
+{
+    maxIterations = newMaxIterations;
+    fillImage();
+}
+
 void Fractal::zoomInOut(double factor)
 {
     zoom *= factor;
-    fillImage(dx, dy, zoom);
+    fillImage();
 }
 
 void Fractal::shiftX(double distance)
 {
     dx += distance;
-    fillImage(dx, dy, zoom);
+    fillImage();
 }
 
 void Fractal::shiftY(double distance)
 {
     dy += distance;
-    fillImage(dx, dy, zoom);
+    fillImage();
 }
