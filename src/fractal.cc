@@ -98,7 +98,6 @@ void Fractal::resetZoom(double newDx, double newDy, double newZoom)
     fillImage();
 }
 
-
 void Fractal::mouseZoom(int x1, int y1, int x2, int y2)
 {
     double difx = abs(x2 - x1) / double(img->width());
@@ -107,11 +106,9 @@ void Fractal::mouseZoom(int x1, int y1, int x2, int y2)
     double distx = abs(x1 + x2) / 2. - img->width() / 2.;
     double disty = abs(y1 + y2) / 2. - img->height() / 2.;
 
-    std::cout << dx << ' ' << distx/zoom << std::endl;
-
     dx -= distx * img->width() / zoom;
     dy -= disty * img->height() / zoom;
-    zoom /= std::min(difx, dify);
+    zoom /= (difx + dify) / 2.;
 
     fillImage();
 }
@@ -147,4 +144,3 @@ void Fractal::setHues(int newHueStart, int newHueEnd)
     hueEnd = newHueEnd;
     fillImage();
 }
-

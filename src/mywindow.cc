@@ -6,18 +6,6 @@
  * License: GNU General Public License Usage
  ************************************************/
 
-#include <QApplication>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QFileDialog>
-#include <QSpinBox>
-#include <QSlider>
-#include <QFormLayout>
-#include <QComboBox>
-#include <QToolTip>
-#include <QMouseEvent>
-#include <iostream>
 #include <map>
 #include <string>
 #include "mywindow.h"
@@ -38,7 +26,8 @@ MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
 
     for(const auto& button : navButtons)
     {
-        button.second->setFixedSize(26, 26);
+        button.second->setFixedSize(NAV_BUTTON_SIZE, NAV_BUTTON_SIZE);
+        button.second->setAutoRepeat(true);
     }
 
     QPushButton* saveButton = new QPushButton("Save image");
@@ -46,8 +35,8 @@ MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
     QPushButton* resetButton = new QPushButton("Reset");
 
     QSpinBox* maxIterBox = new QSpinBox;
-    maxIterBox->setRange(1, 100000);
-    maxIterBox->setValue(300);
+    maxIterBox->setRange(ITER_RANGE[0], ITER_RANGE[1]);
+    maxIterBox->setValue(DEFAULT_ITER);
 
     QComboBox* selectFractal = new QComboBox;
     selectFractal->addItem("Mandelbrot set");
@@ -74,7 +63,7 @@ MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
 
     img = new QImage(WIDTH, HEIGHT, QImage::Format_RGB888);
 
-    fractal = new Fractal(img, imageArea, 0.7*WIDTH, 0., 0.4*WIDTH, maxIterBox->value(), 0, hue1->value());
+    fractal = new Fractal(img, imageArea, DEFAULT_DX, DEFAULT_DY, DEFAULT_ZOOM, maxIterBox->value(), hue1->value(), hue2->value());
     fractal->fillImage();
 
     QVBoxLayout* container = new QVBoxLayout(this);
@@ -115,14 +104,14 @@ MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
     container->addLayout(controls);
 
     connect(saveButton, &QPushButton::clicked, this, &MyWindow::saveImage);
-    connect(resetButton, &QPushButton::clicked, [=](){fractal->resetZoom(0.7*WIDTH, 0., 0.4*WIDTH);});
-    connect(navButtons["zoomIn"], &QPushButton::clicked, [=](){fractal->zoomInOut(1.105465);});
-    connect(navButtons["zoomOut"], &QPushButton::clicked, [=](){fractal->zoomInOut(0.9);});
-    connect(navButtons["dxp"], &QPushButton::clicked, [=](){fractal->shiftX(-20.*double(WIDTH));});
-    connect(navButtons["dxm"], &QPushButton::clicked, [=](){fractal->shiftX(20.*double(WIDTH));});
-    connect(navButtons["dyp"], &QPushButton::clicked, [=](){fractal->shiftY(20.*double(HEIGHT));});
-    connect(navButtons["dym"], &QPushButton::clicked, [=](){fractal->shiftY(-20.*double(HEIGHT));});
-    connect(maxIterBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){fractal->newMaxIter(i);});
+    connect(resetButton, &QPushButton::clicked, [&](){fractal->resetZoom(DEFAULT_DX, DEFAULT_DY, DEFAULT_ZOOM);});
+    connect(navButtons["zoomIn"], &QPushButton::clicked, [&](){fractal->zoomInOut(1. + ZOOM_STEP);});
+    connect(navButtons["zoomOut"], &QPushButton::clicked, [&](){fractal->zoomInOut(1. - ZOOM_STEP);});
+    connect(navButtons["dxp"], &QPushButton::clicked, [&](){fractal->shiftX(-MOVE_STEP*double(WIDTH));});
+    connect(navButtons["dxm"], &QPushButton::clicked, [&](){fractal->shiftX(MOVE_STEP*double(WIDTH));});
+    connect(navButtons["dyp"], &QPushButton::clicked, [&](){fractal->shiftY(MOVE_STEP*double(HEIGHT));});
+    connect(navButtons["dym"], &QPushButton::clicked, [&](){fractal->shiftY(-MOVE_STEP*double(HEIGHT));});
+    connect(maxIterBox, QOverload<int>::of(&QSpinBox::valueChanged), [&](int i){fractal->newMaxIter(i);});
     connect(hue1, &QSlider::valueChanged, [=](int i){fractal->setHues(i, hue2->value());});
     connect(hue2, &QSlider::valueChanged, [=](int i){fractal->setHues(hue1->value(), i);});
 }
