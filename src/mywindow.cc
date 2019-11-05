@@ -10,8 +10,6 @@
 #include <string>
 #include "mywindow.h"
 
-#include <iostream>
-
 MyWindow::MyWindow(QWidget *parent) : QWidget(parent)
 {
     imageArea = new QLabel;
@@ -124,19 +122,24 @@ void MyWindow::saveImage()
 
 void MyWindow::mousePressEvent(QMouseEvent* event)
 {
-    mousePress = event->pos();
-    mouseRelease = event->pos();
+    if (imageArea->underMouse())
+    {
+        mousePress.setX(event->pos().rx()-imageArea->x());
+        mousePress.setY(event->pos().ry()-imageArea->y());
+        mouseRelease = mousePress;
 
-    if (!zoomArea) zoomArea = new QRubberBand(QRubberBand::Rectangle, this);
-    zoomArea->setGeometry(QRect(mousePress, mouseRelease).normalized());
-    zoomArea->show();
+        if (!zoomArea) zoomArea = new QRubberBand(QRubberBand::Rectangle, imageArea);
+        zoomArea->setGeometry(QRect(mousePress, mouseRelease).normalized());
+        zoomArea->show();
+    }
 }
 
 void MyWindow::mouseMoveEvent(QMouseEvent* event)
 {
     if (zoomArea)
     {
-        mouseRelease = event->pos();
+        mouseRelease.setX(event->pos().rx()-imageArea->x());
+        mouseRelease.setY(event->pos().ry()-imageArea->y());
         zoomArea->setGeometry(QRect(mousePress, mouseRelease).normalized());
     }
 }
@@ -145,13 +148,14 @@ void MyWindow::mouseReleaseEvent(QMouseEvent* event)
 {
     if (zoomArea)
     {
-        mouseRelease = event->pos();
+        mouseRelease.setX(event->pos().rx()-imageArea->x());
+        mouseRelease.setY(event->pos().ry()-imageArea->y());
         zoomArea->hide();
 
         delete zoomArea;
         zoomArea = nullptr;
 
-        fractal->mouseZoom(mousePress.rx()-imageArea->x(), mousePress.ry()-imageArea->y(), mouseRelease.rx()-imageArea->x(), mouseRelease.ry()-imageArea->y());
+        fractal->mouseZoom(mousePress.rx(), mousePress.ry(), mouseRelease.rx(), mouseRelease.ry());
     }
 }
 
