@@ -77,9 +77,9 @@ void Fractal::fillImage()
             int hue;
             int hueDif = int(hueStart - hueEnd);
             if (abs(int(hueStart-hueEnd)) < 180) hue = hueEnd + cColourFactor * hueDif;
-            else hue = hueEnd + cColourFactor * (360 - abs(hueDif));
-            if (hue < 0) hue += 360;
-            if (hue > 359) hue -= 360;
+            else hue = hueEnd - cColourFactor * hueDif / abs(hueDif) * (360 - abs(hueDif));
+            while (hue < 0) {hue += 360;}
+            while (hue > 359) {hue -= 360;}
 
             int value = 255 * cColourFactor;
             QColor pixel = QColor::fromHsv(hue, 255, value);
