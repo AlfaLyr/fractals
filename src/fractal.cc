@@ -8,8 +8,9 @@
 
 #include <vector>
 #include <cmath>
-#include <iostream>
 #include "fractal.h"
+
+#include <iostream>
 
 Fractal::Fractal(QImage* img, QLabel* imageArea, double dx, double dy, double zoom, int maxIterations, int hueStart, int hueEnd) :
     img(img), imageArea(imageArea), dx(dx), dy(dy), zoom(zoom), maxIterations(maxIterations), hueStart(hueStart), hueEnd(hueEnd) {}
@@ -37,8 +38,6 @@ double Fractal::mandelbrot(double cr, double ci)
 
 void Fractal::fillImage()
 {
-    uint h, s = 255, v = 255;
-
     std::vector<int> histogram(maxIterations, 0);
     std::vector<std::vector<double>> vMandelbrot(img->width(), std::vector<double>(img->height(), 0.));
     std::vector<double> totalPix;
@@ -73,9 +72,17 @@ void Fractal::fillImage()
         {
             double colourFactor = interpolate((double)floor(vMandelbrot[x][y]), totalPix[floor(vMandelbrot[x][y])], totalPix[ceil(vMandelbrot[x][y])], vMandelbrot[x][y]);
 
-            h = hueStart * (pow(colourFactor, 4)) + hueEnd * (1.-pow(colourFactor, 4));
-            v = 255 * pow(colourFactor, 4);
-            QColor pixel = QColor::fromHsv(h, s, v);
+            double cColourFactor = pow(colourFactor, 4);
+
+            int hue;
+            int hueDif = int(hueStart - hueEnd);
+            if (abs(int(hueStart-hueEnd)) < 180) hue = hueEnd + cColourFactor * hueDif;
+            else hue = hueEnd + cColourFactor * (360 - abs(hueDif));
+            if (hue < 0) hue += 360;
+            if (hue > 359) hue -= 360;
+
+            int value = 255 * cColourFactor;
+            QColor pixel = QColor::fromHsv(hue, 255, value);
 
             img->setPixel(x, y, qRgb(pixel.red(), pixel.green(), pixel.blue()));
         }
